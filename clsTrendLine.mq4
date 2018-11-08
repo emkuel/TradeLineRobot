@@ -1,47 +1,32 @@
 //+------------------------------------------------------------------+
-//|                                                 clsTrendLine.mqh |
+//|                                                 clsTrendLine.mq4 |
 //|                                                      FutureRobot |
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
+#property library
 #property copyright "FutureRobot"
 #property link      "https://www.mql5.com"
 #property version   "1.00"
-#property strict
 
-class clsTrendLine
-  {
-private:
-                    int nPeriod;
-                    int nCurBar;
-                    int Limit;
-                    int AutoTimeframe;
-                    int NumOfTrendLineForArr;
-                    int NumOfTrendLine;
-                    int order;
+int nPeriod;
+int nCurBar;
+int Limit;
+int AutoTimeframe;
+int NumOfTrendLineForArr;
+int NumOfTrendLine;
+int order;
 
-                    double arrLowS[];
-                    double arrLowST[];
-                    double arrHighR[];
-                    double arrHighRT[];
+double arrLowS[];
+double arrLowST[];
+double arrHighR[];
+double arrHighRT[];
 
-                    datetime arrTimeFuncLine[];
-                    double arrFuncLine[][2];
+datetime arrTimeFuncLine[];
+double arrFuncLine[][2];
 
-                    //double r1,r2,r3,r4,r5,r6;
-                    //int rt1,rt2,rt3,rt4,rt5,rt6;
-                    //double s1,s2,s3,s4,s5,s6;
-                    //int st1,st2,st3,st4,st5,st6;
-                    
-                    void SetArrayFunctionLine();
-                    void SetTrendLinePeriod();
-public:
-                    bool GetValueByShiftInFuncLine(int BarNum);
-                    int GetOrder(){return(order);};
-                     clsTrendLine(int _nPeriod, int _Limit, int _NumOfTrendLine);
-                    ~clsTrendLine();
-  };
+int GetOrder(){return(order);};
 
-bool clsTrendLine::GetValueByShiftInFuncLine(int BarNum=1)
+bool GetValueByShiftInFuncLine(int BarNum=1)
 {
  
   for(int i=0;i<=NumOfTrendLine-1;i++)
@@ -81,7 +66,7 @@ double GetA(double Xa, double Xb, double Ya, double Yb)
   return (a);
 }
 
-void clsTrendLine::SetArrayFunctionLine()
+void SetArrayFunctionLine()
 {  
    int j=0;
    for (int i=0; i<=NumOfTrendLine-1; i++)
@@ -107,7 +92,7 @@ void LoopArray(double & arr1[], double & arr2[],int number)
     arr2[i]=arr2[i-1];
   }
 }
-void clsTrendLine::SetTrendLinePeriod()
+void SetTrendLinePeriod()
 {
 
     if(Bars<Limit) Limit=Bars-nPeriod;
@@ -134,7 +119,7 @@ void clsTrendLine::SetTrendLinePeriod()
     }
 }
 
-clsTrendLine::clsTrendLine(int _nPeriod, int _Limit, int _NumOfTrendLine)
+void initTrendLineClass(int _nPeriod, int _Limit, int _NumOfTrendLine)
   {
     nPeriod=_nPeriod;   
     nCurBar=0;
@@ -163,8 +148,4 @@ clsTrendLine::clsTrendLine(int _nPeriod, int _Limit, int _NumOfTrendLine)
     //Set Trend Line
     SetTrendLinePeriod();
     SetArrayFunctionLine();
-  }
-
-clsTrendLine::~clsTrendLine()
-  {
   }

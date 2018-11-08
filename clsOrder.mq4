@@ -1,29 +1,14 @@
 //+------------------------------------------------------------------+
-//|                                                     clsOrder.mqh |
+//|                                                     clsOrder.mq4 |
 //|                                                      FutureRobot |
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
+#property library
 #property copyright "FutureRobot"
 #property link      "https://www.mql5.com"
 #property version   "1.00"
-#property strict
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-class clsOrder
-  {
-private:
 
-public:
-                     double GetValueFromPercentage(double Value,double LotSize,int Mode);
-                     int OpenOrder(int OpenedOrder, int maxOpenPosition,int order,double lotsize, double stoploss,double takeprofit, int magicnumber);
-                     clsOrder();
-                    ~clsOrder();
-  };
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-double clsOrder::GetValueFromPercentage(double _Value,double _lotsize,int Mode)
+double GetValueFromPercentage(double _Value,double _lotsize,int Mode)
 {  
     double stopLossPips=0;
     double balance   = AccountBalance();
@@ -47,7 +32,7 @@ double clsOrder::GetValueFromPercentage(double _Value,double _lotsize,int Mode)
    return (stopLossPips);
 }
 
-int  clsOrder::OpenOrder(int OpenedOrder, int maxOpenPosition, int order,double lotsize, double stoploss,double takeprofit, int magicnumber)
+int OpenOrder(int OpenedOrder, int maxOpenPosition, int order,double lotsize, double stoploss,double takeprofit, int magicnumber)
 {
   if (OpenedOrder < maxOpenPosition)
    {  
@@ -76,15 +61,3 @@ int  clsOrder::OpenOrder(int OpenedOrder, int maxOpenPosition, int order,double 
    }
    return (OpenedOrder);
 }
-
-clsOrder::clsOrder()
-  {
-   
-  }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-clsOrder::~clsOrder()
-  {
-  }
-//+------------------------------------------------------------------+

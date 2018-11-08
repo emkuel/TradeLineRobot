@@ -8,9 +8,17 @@
 #property version   "1.00"
 #property strict
 
-#include <clsOrder.mqh>
-#include <clsTrendLine.mqh>
-#include <clsCandle.mqh>
+#import "clsTrendLine.ex4"
+   void initTrendLineClass(int _nPeriod, int _Limit, int _NumOfTrendLine);
+   bool GetValueByShiftInFuncLine(int BarNum=1);
+   int GetOrder();
+#import "clsOrder.ex4"
+   double GetValueFromPercentage(double _Value,double _lotsize,int Mode);
+   int OpenOrder(int OpenedOrder, int maxOpenPosition, int order,double lotsize, 
+            double stoploss,double takeprofit, int magicnumber);
+#import "clsCandle.ex4"
+   bool CheckCurrentCandle();
+#import
 
 enum Profit
 {   
@@ -31,17 +39,14 @@ extern int TrendLinePeriod = 30;
 extern int BarsLimit=350;
 extern int TrendLinesNum=5;
 
-clsOrder Order();
-clsTrendLine TrendLine(TrendLinePeriod,BarsLimit,TrendLinesNum);
-clsCandle Candle();
-
 int OpenedOrder=0;
 
 int OnInit()
   {
-   Comment("Account Balance: " + AccountBalance());
-   StopLoss = Order.GetValueFromPercentage(StopLoss,LotSize,StopLossMode);
-   TakeProfit = Order.GetValueFromPercentage(TakeProfit,LotSize,TakeProfitMode);    
+   initTrendLineClass(TrendLinePeriod,BarsLimit,TrendLinesNum);
+   Comment("Account Balance: " + (string)AccountBalance());
+   StopLoss = GetValueFromPercentage(StopLoss,LotSize,StopLossMode);
+   TakeProfit = GetValueFromPercentage(TakeProfit,LotSize,TakeProfitMode);    
   
    return(INIT_SUCCEEDED);
   }
@@ -58,9 +63,9 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   if(Candle.CheckCurrentCandle())
-      if (TrendLine.GetValueByShiftInFuncLine())
-        OpenedOrder =Order.OpenOrder(OpenedOrder,MaxOpenPosition,TrendLine.GetOrder(),LotSize,StopLoss,TakeProfit,0);
+   if(CheckCurrentCandle())
+      if (GetValueByShiftInFuncLine())
+        OpenedOrder =OpenOrder(OpenedOrder,MaxOpenPosition,GetOrder(),LotSize,StopLoss,TakeProfit,0);
    
   }
 //+------------------------------------------------------------------+
