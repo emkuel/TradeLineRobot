@@ -17,6 +17,7 @@ private:
                     int AutoTimeframe;
                     int NumOfTrendLineForArr;
                     int NumOfTrendLine;
+                    int order;
 
                     double arrLowS[];
                     double arrLowST[];
@@ -34,12 +35,13 @@ private:
                     void SetArrayFunctionLine();
                     void SetTrendLinePeriod();
 public:
-                    bool GetValueByShiftInFuncLine(int & order,int BarNum);
-                     clsTrendLine(int _NumOfLine);
+                    bool GetValueByShiftInFuncLine(int BarNum);
+                    int GetOrder(){return(order);};
+                     clsTrendLine(int _nPeriod, int _Limit, int _NumOfTrendLine);
                     ~clsTrendLine();
   };
 
-bool clsTrendLine::GetValueByShiftInFuncLine(int & order,int BarNum=1)
+bool clsTrendLine::GetValueByShiftInFuncLine(int BarNum=1)
 {
  
   for(int i=0;i<=NumOfTrendLine-1;i++)
@@ -81,11 +83,19 @@ double GetA(double Xa, double Xb, double Ya, double Yb)
 
 void clsTrendLine::SetArrayFunctionLine()
 {  
+   int j=0;
    for (int i=0; i<=NumOfTrendLine-1; i++)
-   {
-      arrTimeFuncLine[i]=Time[(int)arrLowST[i]];
-      arrFuncLine[i][0]=GetA(arrLowS[i],arrLowST[i],arrLowS[i+1],arrLowST[i+1]);
-      arrFuncLine[i][1]=GetB(arrTimeFuncLine[0],arrLowS[i],arrLowST[i]);            
+   {      
+      //Low
+      arrTimeFuncLine[j]=Time[(int)arrLowST[i]];
+      arrFuncLine[j][0]=GetA(arrLowS[i],arrLowST[i],arrLowS[i+1],arrLowST[i+1]);
+      arrFuncLine[j][1]=GetB(arrTimeFuncLine[0],arrLowS[i],arrLowST[i]);
+      //High
+      arrTimeFuncLine[j+1]=Time[(int)arrHighRT[i]];
+      arrFuncLine[j+1][0]=GetA(arrHighR[i],arrHighRT[i],arrHighR[i+1],arrHighRT[i+1]);
+      arrFuncLine[j+1][1]=GetB(arrTimeFuncLine[0],arrHighR[i],arrHighRT[i]); 
+      
+      j+=2;            
    }
 }
 
@@ -124,11 +134,11 @@ void clsTrendLine::SetTrendLinePeriod()
     }
 }
 
-clsTrendLine::clsTrendLine(int _NumOfTrendLine)
+clsTrendLine::clsTrendLine(int _nPeriod, int _Limit, int _NumOfTrendLine)
   {
-    nPeriod=18;   
+    nPeriod=_nPeriod;   
     nCurBar=0;
-    Limit=0;
+    Limit=_Limit;
     AutoTimeframe=60;
     NumOfTrendLineForArr=_NumOfTrendLine+1;
     NumOfTrendLine=_NumOfTrendLine;

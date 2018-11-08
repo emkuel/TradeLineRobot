@@ -10,6 +10,7 @@
 
 #include <clsOrder.mqh>
 #include <clsTrendLine.mqh>
+#include <clsCandle.mqh>
 
 enum Profit
 {   
@@ -26,14 +27,19 @@ extern double LotSize = 1.0;
 extern bool OpenPositionOnNewPinBar=false;
 extern int MaxOpenPosition = 2;
 
+extern int TrendLinePeriod = 30;
+extern int BarsLimit=350;
+extern int TrendLinesNum=5;
+
 clsOrder Order();
-clsTrendLine TrendLine(5);
+clsTrendLine TrendLine(TrendLinePeriod,BarsLimit,TrendLinesNum);
+clsCandle Candle();
 
 int OpenedOrder=0;
-int order=-1;
 
 int OnInit()
   {
+   Comment("Account Balance: " + AccountBalance());
    StopLoss = Order.GetValueFromPercentage(StopLoss,LotSize,StopLossMode);
    TakeProfit = Order.GetValueFromPercentage(TakeProfit,LotSize,TakeProfitMode);    
   
@@ -52,8 +58,9 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   if (TrendLine.GetValueByShiftInFuncLine(order))
-      OpenedOrder =Order.OpenOrder(OpenedOrder,MaxOpenPosition,order,LotSize,StopLoss,TakeProfit,0);
+   if(Candle.CheckCurrentCandle())
+      if (TrendLine.GetValueByShiftInFuncLine())
+        OpenedOrder =Order.OpenOrder(OpenedOrder,MaxOpenPosition,TrendLine.GetOrder(),LotSize,StopLoss,TakeProfit,0);
    
   }
 //+------------------------------------------------------------------+
