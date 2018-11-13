@@ -10,9 +10,9 @@
 
 datetime arrCurrentTimeCandle[1];  
 
-bool CheckCurrentCandle()
+bool CheckCurrentCandle(int Candle)
 {
-   if (Time[1] != arrCurrentTimeCandle[0])
+   if (Time[Candle] != arrCurrentTimeCandle[0])
    {  
       arrCurrentTimeCandle[0] = Time[1];
       return(true);
