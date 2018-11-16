@@ -54,7 +54,13 @@ int OnInit()
    Comment("Account Balance: " + (string)AccountBalance());
    StopLoss = GetValueFromPercentage(StopLoss,LotSize,StopLossMode);
    TakeProfit = GetValueFromPercentage(TakeProfit,LotSize,TakeProfitMode);    
-  
+   
+   
+   if(CheckCurrentCandle(CandleNumber))
+      if (TrendLine.GetValueByShiftInFuncLine())
+        OpenedOrder =OpenOrder(OpenedOrder,MaxOpenPosition,TrendLine.GetOrder(),LotSize,StopLoss,TakeProfit,0);
+        
+        
    return(INIT_SUCCEEDED);
   }
 //+------------------------------------------------------------------+

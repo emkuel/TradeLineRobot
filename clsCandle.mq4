@@ -7,10 +7,11 @@
 #property copyright "FutureRobot"
 #property link      "https://www.mql5.com"
 #property version   "1.00"
+#property strict
 
 datetime arrCurrentTimeCandle[1];  
 
-bool CheckCurrentCandle(int Candle)
+bool CheckCurrentCandle(int Candle) export
 {
    if (Time[Candle] != arrCurrentTimeCandle[0])
    {  
