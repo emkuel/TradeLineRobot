@@ -16,7 +16,9 @@
 #import "clsOrder.ex4"
    double GetValueFromPercentage(double _Value,double _lotsize,int Mode);
    int OpenOrder(int OpenedOrder, int maxOpenPosition, int order,double lotsize, 
-            double stoploss,double takeprofit, int magicnumber);
+            double stoploss,double takeprofit, double MoneyRiskPrct, int magicnumber);
+   bool CheckMagicNumber(int _magicNumber);
+   bool CloseOrder();
 #import "clsCandle.ex4"
    bool CheckCurrentCandle(int Candle);
 #import
@@ -29,11 +31,10 @@ enum Profit
    Percentage=1
 };
 
-extern Profit StopLossMode;
-extern double StopLoss = 150;
-extern Profit TakeProfitMode;
-extern double TakeProfit = 200;
-extern double LotSize = 1.0;
+//extern Profit StopLossMode;
+//extern Profit TakeProfitMode;
+extern double MoneyRisk=2.0;
+extern double StopLossLine = 100;
 
 extern bool OpenPositionOnNewPinBar=false;
 extern int MaxOpenPosition = 2;
@@ -46,19 +47,21 @@ extern int TrendLinesNum=5;
 extern double PriceDeviation=50;
 
 int OpenedOrder=0;
-clsTrendLine TrendLine(TrendLinePeriod,BarsLimit,TrendLinesNum,PriceDeviation,CandleNumber);
+clsTrendLine TrendLine(TrendLinePeriod,BarsLimit,TrendLinesNum,PriceDeviation,CandleNumber,StopLossLine);
+
+// TODO moneyrisk dla stoplossa, takeprofit nastepna linia.
 
 int OnInit()
   {
    initTrendLineClass(TrendLinePeriod,BarsLimit,TrendLinesNum,PriceDeviation,CandleNumber);
    Comment("Account Balance: " + (string)AccountBalance());
-   StopLoss = GetValueFromPercentage(StopLoss,LotSize,StopLossMode);
-   TakeProfit = GetValueFromPercentage(TakeProfit,LotSize,TakeProfitMode);    
-   
+   //StopLoss = GetValueFromPercentage(StopLoss,LotSize,StopLossMode);
+   //TakeProfit = GetValueFromPercentage(TakeProfit,LotSize,TakeProfitMode);  
    
    if(CheckCurrentCandle(CandleNumber))
       if (TrendLine.GetValueByShiftInFuncLine())
-        OpenedOrder =OpenOrder(OpenedOrder,MaxOpenPosition,TrendLine.GetOrder(),LotSize,StopLoss,TakeProfit,0);
+        OpenedOrder =OpenOrder(OpenedOrder,MaxOpenPosition,TrendLine.GetOrder(),0,TrendLine.GetStopLoss(),
+                              0,MoneyRisk,TrendLine.GetMagicNumber());
         
         
    return(INIT_SUCCEEDED);
@@ -76,10 +79,13 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
   {
+  
+   CheckCurrentOrders();
+   
    if(CheckCurrentCandle(CandleNumber))
       if (TrendLine.GetValueByShiftInFuncLine())
-        OpenedOrder =OpenOrder(OpenedOrder,MaxOpenPosition,TrendLine.GetOrder(),LotSize,StopLoss,TakeProfit,0);
-   
+        OpenedOrder = OpenOrder(OpenedOrder,MaxOpenPosition,TrendLine.GetOrder(),0,TrendLine.GetStopLoss(),
+                              0,MoneyRisk,TrendLine.GetMagicNumber());
   }
 //+------------------------------------------------------------------+
 //| ChartEvent function                                              |
@@ -95,3 +101,14 @@ void OnChartEvent(const int id,
    
   }
 //+------------------------------------------------------------------+
+
+void CheckCurrentOrders()
+{  
+   for (int i=OrdersTotal()-1; i >= 0 ;i--)
+   {
+      if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
+         if(CheckMagicNumber(OrderMagicNumber()))
+            if(TrendLine.CheckPriceIsInTrendLine(OrderMagicNumber()))
+               CloseOrder();
+   }
+}

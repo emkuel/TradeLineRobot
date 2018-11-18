@@ -9,9 +9,11 @@
 #property version   "1.00"
 #property strict
 
-void QucikSortArray(double &arr[], int StartPos, int EndPos, bool SmallestToLarges) export
+void QucikSortArray(double &arr[][], int StartPos, int EndPos, bool SmallestToLarges) export
 {
-   double  v = arr[(StartPos+EndPos)/2];
+   if (ArraySize(arr)<1) return;
+   
+   double  v = arr[(StartPos+EndPos)/2][0];
    int i,j;
    double x;
    i=StartPos;
@@ -19,19 +21,19 @@ void QucikSortArray(double &arr[], int StartPos, int EndPos, bool SmallestToLarg
    do{
       if (SmallestToLarges)
       {
-         while (arr[i]<v) i++;
-         while (arr[j]>v) j--;
+         while (arr[i][0]<v) i++;
+         while (arr[j][0]>v) j--;
       }
       else
       {
-         while (arr[i]>v) i++;
-         while (arr[j]<v) j--;
+         while (arr[i][0]>v) i++;
+         while (arr[j][0]<v) j--;
       }
       if (i<=j)
       {
-         x=arr[i];
-         arr[i]=arr[j];
-         arr[j]=x;
+         x=arr[i][0];
+         arr[i][0]=arr[j][0];
+         arr[j][0]=x;
          i++; j--;
       }      
       }while (i<=j);

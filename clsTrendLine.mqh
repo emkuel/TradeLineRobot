@@ -9,7 +9,7 @@
 #property strict
 
 #import "clsHelperFunction.ex4"
-   void QucikSortArray(double & arr[], int StartPos, int EndPos, bool SmallestToLarges);
+   void QucikSortArray(double & arr[][], int StartPos, int EndPos, bool SmallestToLarges);
 #import
 
 
@@ -23,9 +23,12 @@ private:
                     int NumOfTrendLineForArr;
                     int NumOfTrendLine;
                     int order;
+                    int MagicNumber;
                     int CandleNumber;
                     double PriceDeviation;
-
+                    double StopLoss;
+                    double StopLossLine;
+                    
                     double arrLowS[];
                     double arrLowST[];
                     double arrHighR[];
@@ -33,24 +36,56 @@ private:
 
                     datetime arrTimeFuncLine[];
                     double arrFuncLine[][2];
-                    double arrTrendLineAbove[];
-                    double arrTrendLineBelow[];
-
-                    //double r1,r2,r3,r4,r5,r6;
-                    //int rt1,rt2,rt3,rt4,rt5,rt6;
-                    //double s1,s2,s3,s4,s5,s6;
-                    //int st1,st2,st3,st4,st5,st6;
+                    double arrTrendLineAbove[][5];
+                    double arrTrendLineBelow[][5];
                     
                     void SetArrayFunctionLine();
                     void SetTrendLinePeriod();
 public:
                     bool GetValueByShiftInFuncLine();
                     void SetNearestTrendLineArray();
+                    bool CheckPriceIsInTrendLine(int magicnumber);
                     int GetOrder(){return(order);};
-                     clsTrendLine(int _nPeriod, int _Limit, int _NumOfTrendLine, double _PriceDeviation, int _CandleNumber);
+                    int GetMagicNumber(){return(MagicNumber);};
+                    double GetStopLoss(){return(StopLoss);};
+                     clsTrendLine(int _nPeriod, int _Limit, int _NumOfTrendLine, double _PriceDeviation, 
+                     int _CandleNumber, double _StopLossLine);
                     ~clsTrendLine();
   };
 
+
+bool clsTrendLine::CheckPriceIsInTrendLine(int magicnumber)
+{
+   int arrsizeAbove = ArraySize(arrTrendLineAbove);
+   int arrsizeBelow = ArraySize(arrTrendLineBelow);
+   double CurrentPriceTrendLine;
+  
+   for (int i =0; i<=arrsizeAbove; i++)
+   {
+      if(arrTrendLineAbove[i][4]==magicnumber)
+      {
+         CurrentPriceTrendLine = GetY(arrTrendLineAbove[i][1]
+                                       ,iBarShift(_Symbol,0,(datetime)arrTrendLineAbove[i][2])
+                                       ,arrTrendLineAbove[i][3]);
+                                       
+         if((Bid+PriceDeviation)*Point <= CurrentPriceTrendLine)            
+            return(true);
+      }
+   }
+   for (int i =0; i<=arrsizeBelow; i++)   
+   {
+      if(arrTrendLineBelow[i][4]==magicnumber)
+      {
+         CurrentPriceTrendLine = GetY(arrTrendLineBelow[i][1]
+                                       ,iBarShift(_Symbol,0,(datetime)arrTrendLineBelow[i][2])
+                                       ,arrTrendLineBelow[i][3]);
+                                       
+         if((Ask-PriceDeviation)*Point >= CurrentPriceTrendLine)
+            return(true);
+      }
+   }
+   return(false);
+}
 
 void clsTrendLine::SetNearestTrendLineArray()
 {
@@ -67,13 +102,21 @@ void clsTrendLine::SetNearestTrendLineArray()
       if (TrendLinePrice > CloseBar)
       {
          ArrayResize(arrTrendLineAbove,j+1);
-         arrTrendLineAbove[j] = TrendLinePrice; 
+         arrTrendLineAbove[j][0] = TrendLinePrice;                      //price
+         arrTrendLineAbove[j][1] = arrFuncLine[i][0];                   //a
+         arrTrendLineAbove[j][2] = (double)arrTimeFuncLine[i];          //x time def
+         arrTrendLineAbove[j][3] = arrFuncLine[i][1];                   //b
+         arrTrendLineAbove[j][4] = 0;                                   //magicnumber
          j++;
       }      
       else if (TrendLinePrice < CloseBar)
       {
          ArrayResize(arrTrendLineBelow,k+1);
-         arrTrendLineBelow[k] = TrendLinePrice;
+         arrTrendLineBelow[k][0] = TrendLinePrice;                      //price
+         arrTrendLineBelow[k][1] = arrFuncLine[i][0];                   //a
+         arrTrendLineBelow[k][2] = (double)arrTimeFuncLine[i];          //x time def
+         arrTrendLineBelow[k][3] = arrFuncLine[i][1];                   //b
+         arrTrendLineBelow[k][4] = 0;                                   //magicnumber
          k++;
       }  
    }
@@ -81,7 +124,7 @@ void clsTrendLine::SetNearestTrendLineArray()
 
 bool clsTrendLine::GetValueByShiftInFuncLine()
  {
-    double OpenBar, CloseBar, HighBar, LowBar;
+    double OpenBar, CloseBar, HighBar, LowBar,TrendLinePriceBelow,TrendLinePriceAbove;
     
     SetNearestTrendLineArray();
     QucikSortArray(arrTrendLineAbove,0,ArraySize(arrTrendLineAbove)-1,true);
@@ -92,27 +135,35 @@ bool clsTrendLine::GetValueByShiftInFuncLine()
     HighBar = High[CandleNumber];
     LowBar = Low[CandleNumber];
     
+    TrendLinePriceBelow=arrTrendLineBelow[0][0];
+    TrendLinePriceAbove=arrTrendLineAbove[0][0];
     
-    if ((arrTrendLineBelow[0] >= LowBar && (arrTrendLineBelow[0] <= CloseBar || arrTrendLineBelow[0] <= OpenBar))
-         || (arrTrendLineBelow[0] + (PriceDeviation * Point) >= LowBar 
-            && (arrTrendLineBelow[0] + (PriceDeviation * Point) <= CloseBar || arrTrendLineBelow[0] + (PriceDeviation * Point) <= OpenBar))
-         || (arrTrendLineBelow[0] - (PriceDeviation * Point) >= LowBar 
-            && (arrTrendLineBelow[0] - (PriceDeviation * Point) <= CloseBar || arrTrendLineBelow[0] - (PriceDeviation * Point) <= OpenBar)
+    if ((TrendLinePriceBelow >= LowBar && (TrendLinePriceBelow <= CloseBar || TrendLinePriceBelow <= OpenBar))
+         || (TrendLinePriceBelow + (PriceDeviation * Point) >= LowBar 
+            && (TrendLinePriceBelow + (PriceDeviation * Point) <= CloseBar || TrendLinePriceBelow + (PriceDeviation * Point) <= OpenBar))
+         || (TrendLinePriceBelow - (PriceDeviation * Point) >= LowBar 
+            && (TrendLinePriceBelow - (PriceDeviation * Point) <= CloseBar || TrendLinePriceBelow - (PriceDeviation * Point) <= OpenBar)
             ))         
     {
       //long
-      order=0;
+      order=0;      
+      arrTrendLineAbove[0][4]=StringToDouble((string)order+(string)((int)Time[1]/4000000) + (string)MathRand());
+      MagicNumber = (int)arrTrendLineAbove[0][4];
+      StopLoss= MathAbs(MathFloor(Ask-TrendLinePriceBelow  - (StopLossLine*Point)));
       return (true);    
     }
-    else if ((arrTrendLineAbove[0] <= HighBar && (arrTrendLineAbove[0] >=CloseBar || arrTrendLineAbove[0] >= OpenBar))
-            || (arrTrendLineAbove[0]  + (PriceDeviation * Point) <= HighBar 
-               && (arrTrendLineAbove[0] + (PriceDeviation * Point) >=CloseBar || arrTrendLineAbove[0] + (PriceDeviation * Point) >= OpenBar))
-            || (arrTrendLineAbove[0]  - (PriceDeviation * Point) <= HighBar 
-               && (arrTrendLineAbove[0] - (PriceDeviation * Point) >=CloseBar || arrTrendLineAbove[0] - (PriceDeviation * Point) >= OpenBar))
+    else if ((TrendLinePriceAbove <= HighBar && (TrendLinePriceAbove >=CloseBar || TrendLinePriceAbove >= OpenBar))
+            || (TrendLinePriceAbove  + (PriceDeviation * Point) <= HighBar 
+               && (TrendLinePriceAbove + (PriceDeviation * Point) >=CloseBar || TrendLinePriceAbove + (PriceDeviation * Point) >= OpenBar))
+            || (TrendLinePriceAbove  - (PriceDeviation * Point) <= HighBar 
+               && (TrendLinePriceAbove - (PriceDeviation * Point) >=CloseBar || TrendLinePriceAbove - (PriceDeviation * Point) >= OpenBar))
             )
     {
       //short
-      order=1;
+      order=1;      
+      arrTrendLineBelow[0][4]=StringToDouble((string)order+(string)((int)Time[1]/8000000) + (string)MathRand());
+      MagicNumber = (int)arrTrendLineAbove[0][4];
+      StopLoss= MathAbs(MathFloor(Bid-TrendLinePriceBelow  + (StopLossLine*Point)));
       return (true);
     }
       
@@ -120,19 +171,16 @@ bool clsTrendLine::GetValueByShiftInFuncLine()
 }
 double GetY(double a, double x, double b)
 {
-  //y=a(x-)+b   - shift right
   double y = (a*x) + b;
   return (y);
 }
 double GetB(double a, double x, double y)
-{
+{   
   double b= -(a*x)+y;
   return (b);
 }
 double GetA(double Xa, double Ya, double Xb, double Yb)
 {
-  //a=(Yb-Ya)/(Xb-Xa)
-
   double a = (Yb-Ya)/(Xb-Xa);
   return (a);
 }
@@ -192,7 +240,8 @@ void clsTrendLine::SetTrendLinePeriod()
     }
 }
 
-clsTrendLine::clsTrendLine(int _nPeriod, int _Limit, int _NumOfTrendLine, double _PriceDeviation, int _CandleNumber)
+clsTrendLine::clsTrendLine(int _nPeriod, int _Limit, int _NumOfTrendLine, double _PriceDeviation, 
+                        int _CandleNumber, double _StopLossLine)
   {
     nPeriod=_nPeriod;   
     nCurBar=0;
@@ -202,7 +251,8 @@ clsTrendLine::clsTrendLine(int _nPeriod, int _Limit, int _NumOfTrendLine, double
     NumOfTrendLine=_NumOfTrendLine;
     PriceDeviation=_PriceDeviation;
     CandleNumber=_CandleNumber;
-   
+    StopLossLine=_StopLossLine;
+    
     ArrayResize(arrLowS,NumOfTrendLineForArr);
     ArrayResize(arrLowST,NumOfTrendLineForArr);
     ArrayResize(arrHighR,NumOfTrendLineForArr);

@@ -9,6 +9,16 @@
 #property version   "1.00"
 #property strict
 
+int arrOrderList[];
+
+double GetLotFromMoneyRisk(double _MoneyRiskPrct, double StopLoss) export 
+{
+   double MoneyRiskValue = AccountBalance() * (_MoneyRiskPrct/100);   
+   double LotSize =NormalizeDouble(MoneyRiskValue/ (StopLoss* MarketInfo(_Symbol, MODE_LOTSIZE)),2);
+   if (LotSize == 0.0) LotSize = 0.01;
+   return (LotSize);
+}
+
 double GetValueFromPercentage(double _Value,double _lotsize,int Mode) export
 {  
     double stopLossPips=0;
@@ -33,15 +43,32 @@ double GetValueFromPercentage(double _Value,double _lotsize,int Mode) export
    return (stopLossPips);
 }
 
-int OpenOrder(int OpenedOrder, int maxOpenPosition, int order,double lotsize, double stoploss,double takeprofit, int magicnumber) export
+void SetArrayOrderList(int _magicnumber)
 {
+   int arrsize = ArraySize(arrOrderList);
+   ArrayResize(arrOrderList,arrsize+1);
+   
+   arrOrderList[arrsize+1]= _magicnumber;
+      
+}
+int OpenOrder(int OpenedOrder, int maxOpenPosition, int order, double lotsize, double stoploss,
+               double takeprofit, double MoneyRiskPrct, int _magicnumber) export
+{
+   //magicnumber = order + OpenOrder + (int)Time + MathRand + _magicnumber
+   int magicnumber=0;
+   
+   switch((int)lotsize)
+   {
+      case 0: lotsize = GetLotFromMoneyRisk(MoneyRiskPrct,stoploss);
+   }
+     
   if (OpenedOrder < maxOpenPosition)
    {  
       if (order == 1)
-      {                      
-         if(OrderSend(Symbol(),order,lotsize,Bid,3,Bid+(stoploss*Point),Bid - (takeprofit* Point),NULL,0+magicnumber,0,clrGreen))         
+      {     
+         if(OrderSend(Symbol(),order,lotsize,Bid,3,Bid+(stoploss*Point),Bid - (takeprofit* Point),NULL,magicnumber,0,clrGreen))         
             {
-               magicnumber++;
+               SetArrayOrderList(magicnumber);
                return (OpenedOrder++);                        
                Print("Short transaction opened");
             }     
@@ -49,10 +76,10 @@ int OpenOrder(int OpenedOrder, int maxOpenPosition, int order,double lotsize, do
             Print("Cannot open short transaction.");
       }
       else if (order == 0)
-      {         
-         if(OrderSend(Symbol(),order,lotsize,Ask,3,Ask - (stoploss * Point),Ask + (takeprofit * Point),NULL,0+magicnumber,0,clrGreen))
+      {       
+         if(OrderSend(Symbol(),order,lotsize,Ask,3,Ask - (stoploss * Point),Ask + (takeprofit * Point),NULL,magicnumber,0,clrGreen))
             {
-               magicnumber++;
+               SetArrayOrderList(magicnumber);
                return (OpenedOrder++); 
                Print("Long transaction opened");
             }
@@ -61,4 +88,20 @@ int OpenOrder(int OpenedOrder, int maxOpenPosition, int order,double lotsize, do
       }
    }
    return (OpenedOrder);
+}
+bool CloseOrder() export
+{
+   
+   return(true);
+}
+bool CheckMagicNumber(int _magicNumber) export
+{
+   int arrsize = ArraySize(arrOrderList);
+   
+   for (int i=0; i<=arrsize; i++)
+   {
+      if (arrOrderList[i]==_magicNumber)
+         return(true);
+   }   
+   return(false);
 }
