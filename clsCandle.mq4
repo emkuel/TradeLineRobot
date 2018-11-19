@@ -9,13 +9,14 @@
 #property version   "1.00"
 #property strict
 
-datetime arrCurrentTimeCandle[1];  
+datetime arrTimeCandle[1];  
 
+void initTimeCandle(int _CandleNumber) export {arrTimeCandle[0] = _CandleNumber;}
 bool CheckCurrentCandle(int Candle) export
 {
-   if (Time[Candle] != arrCurrentTimeCandle[0])
+   if (Time[Candle] != arrTimeCandle[0])
    {  
-      arrCurrentTimeCandle[0] = Time[1];
+      arrTimeCandle[0] = Time[Candle];
       return(true);
    }   
    return(false);      

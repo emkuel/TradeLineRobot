@@ -89,9 +89,16 @@ int OpenOrder(int OpenedOrder, int maxOpenPosition, int order, double lotsize, d
    }
    return (OpenedOrder);
 }
-bool CloseOrder() export
+bool CheckAndCloseOrderByMagicNumber() export
 {
-   
+   for (int i=OrdersTotal()-1; i >= 0 ;i--)
+   {
+      if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
+         magicnumber = OrderMagicNumber();
+         if(Order.CheckMagicNumber(magicnumber))
+            if(TrendLine.CheckPriceIsInTrendLine(OrderMagicNumber()))
+               Order.CloseOrder(magicnumber);
+   }
    return(true);
 }
 bool CheckMagicNumber(int _magicNumber) export

@@ -56,11 +56,11 @@ public:
 
 bool clsTrendLine::CheckPriceIsInTrendLine(int magicnumber)
 {
-   int arrsizeAbove = ArraySize(arrTrendLineAbove);
-   int arrsizeBelow = ArraySize(arrTrendLineBelow);
+   int arrsizeAbove = (ArraySize(arrTrendLineAbove))/5;
+   int arrsizeBelow = (ArraySize(arrTrendLineBelow))/5;
    double CurrentPriceTrendLine;
   
-   for (int i =0; i<=arrsizeAbove; i++)
+   for (int i =0; i<=arrsizeAbove-1; i++)
    {
       if(arrTrendLineAbove[i][4]==magicnumber)
       {
@@ -68,11 +68,11 @@ bool clsTrendLine::CheckPriceIsInTrendLine(int magicnumber)
                                        ,iBarShift(_Symbol,0,(datetime)arrTrendLineAbove[i][2])
                                        ,arrTrendLineAbove[i][3]);
                                        
-         if((Bid+PriceDeviation)*Point <= CurrentPriceTrendLine)            
+         if((Bid <= CurrentPriceTrendLine) && (Bid+(PriceDeviation*Point) >= CurrentPriceTrendLine))            
             return(true);
       }
    }
-   for (int i =0; i<=arrsizeBelow; i++)   
+   for (int i =0; i<=arrsizeBelow-1; i++)   
    {
       if(arrTrendLineBelow[i][4]==magicnumber)
       {
@@ -80,10 +80,11 @@ bool clsTrendLine::CheckPriceIsInTrendLine(int magicnumber)
                                        ,iBarShift(_Symbol,0,(datetime)arrTrendLineBelow[i][2])
                                        ,arrTrendLineBelow[i][3]);
                                        
-         if((Ask-PriceDeviation)*Point >= CurrentPriceTrendLine)
+         if((Ask >= CurrentPriceTrendLine) && (Ask-(PriceDeviation*Point) >= CurrentPriceTrendLine))
             return(true);
       }
    }
+
    return(false);
 }
 
@@ -147,9 +148,10 @@ bool clsTrendLine::GetValueByShiftInFuncLine()
     {
       //long
       order=0;      
-      arrTrendLineAbove[0][4]=StringToDouble((string)order+(string)((int)Time[1]/4000000) + (string)MathRand());
-      MagicNumber = (int)arrTrendLineAbove[0][4];
-      StopLoss= MathAbs(MathFloor(Ask-TrendLinePriceBelow  - (StopLossLine*Point)));
+      arrTrendLineBelow[0][4]=StringToDouble((string)order+(string)((int)Time[1]/4000000) + (string)MathRand());
+      MagicNumber = NormalizeDouble(arrTrendLineBelow[0][4],0);
+      StopLoss= MathAbs((((TrendLinePriceBelow+(StopLossLine*Point))-Ask)/Point));
+      MathAbs((TrendLinePriceBelow+Ask)  - (StopLossLine*Point));
       return (true);    
     }
     else if ((TrendLinePriceAbove <= HighBar && (TrendLinePriceAbove >=CloseBar || TrendLinePriceAbove >= OpenBar))
@@ -160,10 +162,10 @@ bool clsTrendLine::GetValueByShiftInFuncLine()
             )
     {
       //short
-      order=1;      
-      arrTrendLineBelow[0][4]=StringToDouble((string)order+(string)((int)Time[1]/8000000) + (string)MathRand());
-      MagicNumber = (int)arrTrendLineAbove[0][4];
-      StopLoss= MathAbs(MathFloor(Bid-TrendLinePriceBelow  + (StopLossLine*Point)));
+      order=1;    
+      arrTrendLineAbove[0][4]=StringToDouble((string)order+(string)((int)Time[1]/4000000) + (string)MathRand());
+      MagicNumber=NormalizeDouble(arrTrendLineAbove[0][4],0);
+      StopLoss= MathAbs((((TrendLinePriceAbove+(StopLossLine*Point))-Bid)/Point));
       return (true);
     }
       
@@ -181,7 +183,10 @@ double GetB(double a, double x, double y)
 }
 double GetA(double Xa, double Ya, double Xb, double Yb)
 {
-  double a = (Yb-Ya)/(Xb-Xa);
+  double a=0;  
+  if((Xb-Xa)!=0)
+   a = (Yb-Ya)/(Xb-Xa);
+  
   return (a);
 }
 

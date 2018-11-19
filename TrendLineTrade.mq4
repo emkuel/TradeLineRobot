@@ -20,49 +20,35 @@
    bool CheckMagicNumber(int _magicNumber);
    bool CloseOrder();
 #import "clsCandle.ex4"
+   void initTimeCandle(int _CandleNumber);
    bool CheckCurrentCandle(int Candle);
 #import
 
 #include <clsTrendLine.mqh>
+#include <clsOrder.mqh>
 
-enum Profit
-{   
-   Pips=0,
-   Percentage=1
-};
+input double MoneyRisk=2.0;
+input double StopLossLine = 100;
 
-//extern Profit StopLossMode;
-//extern Profit TakeProfitMode;
-extern double MoneyRisk=2.0;
-extern double StopLossLine = 100;
-
-extern bool OpenPositionOnNewPinBar=false;
-extern int MaxOpenPosition = 2;
+input bool OpenPositionOnNewPinBar=false;
+input int MaxOpenPosition = 1;
 input int CandleNumber =1;
 
-extern int TrendLinePeriod = 20;
-extern int BarsLimit=350;
-extern int TrendLinesNum=5;
+input int TrendLinePeriod = 30;
+input int BarsLimit=350;
+input int TrendLinesNum=5;
 
-extern double PriceDeviation=50;
+input double PriceDeviation=50;
 
 int OpenedOrder=0;
 clsTrendLine TrendLine(TrendLinePeriod,BarsLimit,TrendLinesNum,PriceDeviation,CandleNumber,StopLossLine);
-
-// TODO moneyrisk dla stoplossa, takeprofit nastepna linia.
+clsOrder Order();
 
 int OnInit()
   {
-   initTrendLineClass(TrendLinePeriod,BarsLimit,TrendLinesNum,PriceDeviation,CandleNumber);
+   //initTrendLineClass(TrendLinePeriod,BarsLimit,TrendLinesNum,PriceDeviation,CandleNumber);
    Comment("Account Balance: " + (string)AccountBalance());
-   //StopLoss = GetValueFromPercentage(StopLoss,LotSize,StopLossMode);
-   //TakeProfit = GetValueFromPercentage(TakeProfit,LotSize,TakeProfitMode);  
-   
-   if(CheckCurrentCandle(CandleNumber))
-      if (TrendLine.GetValueByShiftInFuncLine())
-        OpenedOrder =OpenOrder(OpenedOrder,MaxOpenPosition,TrendLine.GetOrder(),0,TrendLine.GetStopLoss(),
-                              0,MoneyRisk,TrendLine.GetMagicNumber());
-        
+   initTimeCandle(CandleNumber);
         
    return(INIT_SUCCEEDED);
   }
@@ -84,7 +70,7 @@ void OnTick()
    
    if(CheckCurrentCandle(CandleNumber))
       if (TrendLine.GetValueByShiftInFuncLine())
-        OpenedOrder = OpenOrder(OpenedOrder,MaxOpenPosition,TrendLine.GetOrder(),0,TrendLine.GetStopLoss(),
+        OpenedOrder = Order.OpenOrder(OpenedOrder,MaxOpenPosition,TrendLine.GetOrder(),0,TrendLine.GetStopLoss(),
                               0,MoneyRisk,TrendLine.GetMagicNumber());
   }
 //+------------------------------------------------------------------+
@@ -104,11 +90,13 @@ void OnChartEvent(const int id,
 
 void CheckCurrentOrders()
 {  
+   int magicnumber;
    for (int i=OrdersTotal()-1; i >= 0 ;i--)
    {
       if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
-         if(CheckMagicNumber(OrderMagicNumber()))
-            if(TrendLine.CheckPriceIsInTrendLine(OrderMagicNumber()))
-               CloseOrder();
+         magicnumber = OrderMagicNumber();
+         if(Order.CheckMagicNumber(magicnumber))
+            if(TrendLine.CheckPriceIsInTrendLine(magicnumber))
+               Order.CloseOrderByMagicNumber(magicnumber);
    }
 }
