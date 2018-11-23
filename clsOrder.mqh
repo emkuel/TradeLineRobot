@@ -80,8 +80,8 @@ int clsOrder::OpenOrder(int OpenedOrder, int maxOpenPosition, int order, double 
          if(OrderSend(Symbol(),order,lotsize,Bid,3,Bid+(stoploss*Point),takeprofit,NULL,_magicnumber,0,clrGreen))         
             {
                SetArrayOrderList(_magicnumber);
-               return (OpenedOrder++);                        
                Print("Short transaction opened");
+               return (OpenedOrder++);  
             }     
          else
             Print("Cannot open short transaction.");
@@ -92,8 +92,8 @@ int clsOrder::OpenOrder(int OpenedOrder, int maxOpenPosition, int order, double 
          if(OrderSend(Symbol(),order,lotsize,Ask,3,Ask - (stoploss * Point) ,takeprofit,NULL,_magicnumber,0,clrGreen))
             {
                SetArrayOrderList(_magicnumber);
-               return (OpenedOrder++); 
                Print("Long transaction opened");
+               return (OpenedOrder++);                
             }
          else
             Print("Cannot open long transaction.");      
