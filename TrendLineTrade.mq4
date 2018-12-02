@@ -19,13 +19,12 @@
 //            double stoploss,double takeprofit, double MoneyRiskPrct, int magicnumber);
 //   bool CheckMagicNumber(int _magicNumber);
 //   bool CloseOrder();
-#import "clsCandle.ex4"
-   void initTimeCandle(int _CandleNumber);
-   bool CheckCurrentCandle(int Candle);
-#import
 
+
+#include <hCandle.mqh>
 #include <clsTrendLine.mqh>
 #include <clsOrder.mqh>
+#include <clsFile.mqh>
 
 extern double MoneyRisk=2.0;
 extern double StopLossLine = 100;
@@ -33,26 +32,28 @@ extern double StopLossLine = 100;
 extern int MaxOpenPosition = 1;
 extern int CandleNumber =1;
 
-extern int TrendLinePeriod = 30;
+extern int TrendLinePeriod = 50;
 extern int BarsLimit=350;
 extern int TrendLinesNum=5;
 
 extern double PriceDeviation=50;
 
-int OpenedOrder=0;
+int OpenedOrders=0;
 clsTrendLine TrendLine(TrendLinePeriod,BarsLimit,TrendLinesNum,PriceDeviation,CandleNumber,StopLossLine);
 clsOrder Order();
+clsFile Files();
 
 int OnInit()
   {
    //initTrendLineClass(TrendLinePeriod,BarsLimit,TrendLinesNum,PriceDeviation,CandleNumber);
    Comment("Account Balance: " + (string)NormalizeDouble(AccountBalance(),2));
    initTimeCandle(CandleNumber);
+   Files.InitMagicNumber();
    
    CheckCurrentOrders();
    if(CheckCurrentCandle(CandleNumber))
       if (TrendLine.GetValueByShiftInFuncLine())
-        OpenedOrder = Order.OpenOrder(OpenedOrder,MaxOpenPosition,TrendLine.GetOrder(),0,TrendLine.GetStopLoss(),
+        OpenedOrders = Order.OpenOrder(OpenedOrders,MaxOpenPosition,TrendLine.GetOrder(),0,TrendLine.GetStopLoss(),
                               0,MoneyRisk,TrendLine.GetMagicNumber());
                               
    return(INIT_SUCCEEDED);
@@ -74,7 +75,7 @@ void OnTick()
    CheckCurrentOrders();
    if(CheckCurrentCandle(CandleNumber))
       if (TrendLine.GetValueByShiftInFuncLine())
-        OpenedOrder = Order.OpenOrder(OpenedOrder,MaxOpenPosition,TrendLine.GetOrder(),0,TrendLine.GetStopLoss(),
+        OpenedOrders = Order.OpenOrder(OpenedOrders,MaxOpenPosition,TrendLine.GetOrder(),0,TrendLine.GetStopLoss(),
                               0,MoneyRisk,TrendLine.GetMagicNumber());
   }
 //+------------------------------------------------------------------+
@@ -100,7 +101,7 @@ void CheckCurrentOrders()
       if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
          magicnumber = OrderMagicNumber();
          if(Order.CheckMagicNumber(magicnumber))
-            if(TrendLine.CheckPriceIsInTrendLine(magicnumber))
+            if(TrendLine.CheckPriceIsInTrendLine(magicnumber,OrderType()))
                Order.CloseOrderByMagicNumber(magicnumber);
    }  
 }

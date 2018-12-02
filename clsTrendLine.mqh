@@ -12,6 +12,9 @@
    void QuickSortArray2Dimension(double & arr[][], int StartPos, int EndPos, bool SmallestToLarges);
 #import
 
+#include <clsFile.mqh>
+
+clsFile File();
 
 class clsTrendLine
   {
@@ -25,6 +28,8 @@ private:
                     int order;
                     int MagicNumber;
                     int CandleNumber;
+                    int ArraySizeTrendLineAbove;
+                    int ArraySizeTrendLineBelow;
                     double PriceDeviation;
                     double StopLoss;
                     double StopLossLine;
@@ -46,7 +51,7 @@ private:
 public:
                     bool GetValueByShiftInFuncLine();
                     void SetNearestTrendLineArray();
-                    bool CheckPriceIsInTrendLine(int magicnumber);
+                    bool CheckPriceIsInTrendLine(int magicnumber, int ordertype);
                     int GetOrder(){return(order);};
                     int GetMagicNumber(){return(MagicNumber);};
                     double GetStopLoss(){return(StopLoss);};
@@ -75,16 +80,17 @@ bool clsTrendLine::LoopTrendLine(double &arr[][],double price, int arrsize, int 
    }
    return (false);
 }
-bool clsTrendLine::CheckPriceIsInTrendLine(int magicnumber)
+
+bool clsTrendLine::CheckPriceIsInTrendLine(int magicnumber, int ordertype)
 {
-   int magicorder = (int)StringSubstr((string)magicnumber,1,1);
+   //int magicorder = (int)StringSubstr((string)magicnumber,1,1);
    
    int arrsizeAbove = (ArraySize(arrTrendLineAbove))/5;
    int arrsizeBelow = (ArraySize(arrTrendLineBelow))/5;
    
-   if (magicorder == 0)
+   if (ordertype == 0)//buy
       return(LoopTrendLine(arrTrendLineAbove,Bid,arrsizeAbove,magicnumber));
-   else if (magicorder == 1)
+   else if (ordertype == 1)//sell
       return (LoopTrendLine(arrTrendLineBelow,Ask,arrsizeBelow,magicnumber));
    
    return (false);
@@ -109,22 +115,23 @@ void clsTrendLine::SetNearestTrendLineArray()
          arrTrendLineAbove[j][1] = arrFuncLine[i][0];                   //a
          arrTrendLineAbove[j][2] = (double)arrTimeFuncLine[i];          //x time def
          arrTrendLineAbove[j][3] = arrFuncLine[i][1];                   //b
-         arrTrendLineAbove[j][4] = 0;                                   //magicnumber         
-         j++;
-         
+         arrTrendLineAbove[j][4] = 0;                                   //magicnumber     
+         j++;         
       }      
       else if (TrendLinePrice < CloseBar)
-      {
+      {         
          ArrayResize(arrTrendLineBelow,k+1);
          arrTrendLineBelow[k][0] = TrendLinePrice;                      //price
          arrTrendLineBelow[k][1] = arrFuncLine[i][0];                   //a
          arrTrendLineBelow[k][2] = (double)arrTimeFuncLine[i];          //x time def
          arrTrendLineBelow[k][3] = arrFuncLine[i][1];                   //b
-         arrTrendLineBelow[k][4] = 0;                                   //magicnumber         
+         arrTrendLineBelow[k][4] = 0;                                   //magicnumber   
          k++;
-         
       }  
    }
+   //arraysize
+   ArraySizeTrendLineAbove = j;
+   ArraySizeTrendLineBelow = k; 
 }
 
 bool clsTrendLine::GetValueByShiftInFuncLine()
@@ -139,16 +146,16 @@ bool clsTrendLine::GetValueByShiftInFuncLine()
     Print("Set Nearest Trend Line");
     SetNearestTrendLineArray();
     
-    if(ArraySize(arrTrendLineBelow)>0)
+    if(ArraySizeTrendLineBelow>0)
     {
-      QuickSortArray2Dimension(arrTrendLineBelow,0,(ArraySize(arrTrendLineBelow)/5)-1,false);
+      QuickSortArray2Dimension(arrTrendLineBelow,0,(ArraySizeTrendLineBelow)-1,false);
       TrendLinePriceBelow=arrTrendLineBelow[0][0];
       Print("Nearest below:" + (string)TrendLinePriceBelow);
     }
     
-    if (ArraySize(arrTrendLineAbove)>0)
-    {
-      QuickSortArray2Dimension(arrTrendLineAbove,0,(ArraySize(arrTrendLineAbove)/5)-1,true);
+    if (ArraySizeTrendLineAbove>0)
+    {QuickSortArray2Dimension
+      (arrTrendLineAbove,0,(ArraySizeTrendLineAbove)-1,true);
       TrendLinePriceAbove=arrTrendLineAbove[0][0];
       Print("Nearest above: " + (string)TrendLinePriceAbove);
     }
@@ -167,11 +174,17 @@ bool clsTrendLine::GetValueByShiftInFuncLine()
             ))         
     {
       Print("Long position match");//long
-      order=0;      
-      arrTrendLineBelow[0][4]=StringToDouble("6"+(string)order+(string)((int)Time[1]/40000000) + (string)MathRand());
+      order=0;
+      //create magicnumber      
+      arrTrendLineBelow[0][4]=StringToDouble(CreateMagicNumber());
       MagicNumber = NormalizeDouble(arrTrendLineBelow[0][4],0);
+      //add magicnumber to file
+      if (!File.AddMagicNumber(MagicNumber))
+         return (false);
+      
+      //set stoploss
       StopLoss= MathAbs((((TrendLinePriceBelow+(StopLossLine*Point))-Ask)/Point));
-      MathAbs((TrendLinePriceBelow+Ask)  - (StopLossLine*Point));
+      //MathAbs((TrendLinePriceBelow+Ask)  - (StopLossLine*Point));
       return (true);    
     }
     else if ((TrendLinePriceAbove <= HighBar && (TrendLinePriceAbove >=CloseBar || TrendLinePriceAbove >= OpenBar))
@@ -183,14 +196,28 @@ bool clsTrendLine::GetValueByShiftInFuncLine()
     {
       Print("Short position match");//short
       order=1;    
-      arrTrendLineAbove[0][4]=StringToDouble("6"+(string)order+(string)((int)Time[1]/40000000) + (string)MathRand());
+      //create magicnumber  
+      arrTrendLineAbove[0][4]=StringToDouble(CreateMagicNumber());
       MagicNumber=NormalizeDouble(arrTrendLineAbove[0][4],0);
+      //add magicnumber to file
+      if (!File.AddMagicNumber(MagicNumber))
+         return (false);
+      
+      //set stoploss
       StopLoss= MathAbs((((TrendLinePriceAbove+(StopLossLine*Point))-Bid)/Point));
       return (true);
     }
     
   Print("Position not match");
   return (false);
+}
+
+string CreateMagicNumber()
+{
+   datetime ct = TimeCurrent();
+   string magicnumber = StringConcatenate(TimeMonth(ct),TimeDay(ct),TimeHour(ct),TimeMinute(ct),TimeSeconds(ct));
+   
+   return(magicnumber);
 }
 double GetY(double a, double x, double b)
 {
