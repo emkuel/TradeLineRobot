@@ -28,8 +28,8 @@
 
 extern double MoneyRisk=2.0;
 extern double StopLossLine = 100;
+extern double MinTakeProfit=100;
 
-extern int MaxOpenPosition = 1;
 extern int CandleNumber =1;
 
 extern int TrendLinePeriod = 50;
@@ -39,22 +39,32 @@ extern int TrendLinesNum=5;
 extern double PriceDeviation=50;
 
 int OpenedOrders=0;
-clsTrendLine TrendLine(TrendLinePeriod,BarsLimit,TrendLinesNum,PriceDeviation,CandleNumber,StopLossLine);
-clsOrder Order();
-clsFile Files();
+int MaxOpenPosition = 1;
+
+clsTrendLine TrendLine(TrendLinePeriod,BarsLimit,TrendLinesNum,PriceDeviation,CandleNumber,StopLossLine,MinTakeProfit);
+clsOrder Order(MoneyRisk,MaxOpenPosition);
+clsFile FilesOrders((string)AccountNumber() + "_Orders.txt");
 
 int OnInit()
   {
+   int arr[];
+   int CheckOpenPosition=0;
    //initTrendLineClass(TrendLinePeriod,BarsLimit,TrendLinesNum,PriceDeviation,CandleNumber);
    Comment("Account Balance: " + (string)NormalizeDouble(AccountBalance(),2));
    initTimeCandle(CandleNumber);
-   Files.InitMagicNumber();
+   FilesOrders.InitMagicNumber();
    
-   CheckCurrentOrders();
-   if(CheckCurrentCandle(CandleNumber))
-      if (TrendLine.GetValueByShiftInFuncLine())
-        OpenedOrders = Order.OpenOrder(OpenedOrders,MaxOpenPosition,TrendLine.GetOrder(),0,TrendLine.GetStopLoss(),
-                              0,MoneyRisk,TrendLine.GetMagicNumber());
+   //get open position
+   CheckOpenPosition=FilesOrders.GetOpenOrder();
+   
+   if(CheckOpenPosition > OpenedOrders)
+      OpenedOrders=CheckOpenPosition;
+   
+   TrendLine.initTrendLine(OpenedOrders);
+   
+   //copy magic number array
+   FilesOrders.GetOrderArrayFromFile(arr);
+   Order.SetOrderArrayFromFile(arr);
                               
    return(INIT_SUCCEEDED);
   }
@@ -70,38 +80,43 @@ void OnDeinit(const int reason)
 //| Expert tick function                                             |
 //+------------------------------------------------------------------+
 void OnTick()
-  {
+{     
+   
+   if(OpenedOrders==0 && CheckCurrentCandle(CandleNumber))
+   {
+      TrendLine.initTrendLine(OpenedOrders);
+      if(TrendLine.GetValueByShiftInFuncLine()) 
+        if(Order.OpenOrder(OpenedOrders,TrendLine.GetOrder(),0,TrendLine.GetStopLoss(),0,TrendLine.GetMagicNumber()))
+            OpenedOrders++;
+  }   
+   else if (OpenedOrders>0)
+      CheckCurrentOrders();
+}
   
-   CheckCurrentOrders();
-   if(CheckCurrentCandle(CandleNumber))
-      if (TrendLine.GetValueByShiftInFuncLine())
-        OpenedOrders = Order.OpenOrder(OpenedOrders,MaxOpenPosition,TrendLine.GetOrder(),0,TrendLine.GetStopLoss(),
-                              0,MoneyRisk,TrendLine.GetMagicNumber());
-  }
-//+------------------------------------------------------------------+
-//| ChartEvent function                                              |
-//+------------------------------------------------------------------+
-void OnChartEvent(const int id,
-                  const long &lparam,
-                  const double &dparam,
-                  const string &sparam)
-  {
-   
-   
-         
-   
-  }
-//+------------------------------------------------------------------+
-
 void CheckCurrentOrders()
 {  
-   int magicnumber;
+   int magicnumber=0;
+   int b=false;
+   
    for (int i=OrdersTotal()-1; i >= 0 ;i--)
    {
       if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
+      {
          magicnumber = OrderMagicNumber();
          if(Order.CheckMagicNumber(magicnumber))
-            if(TrendLine.CheckPriceIsInTrendLine(magicnumber,OrderType()))
-               Order.CloseOrderByMagicNumber(magicnumber);
-   }  
+         {
+            b=true;
+            if(TrendLine.CheckPriceIsInTrendLine(magicnumber,OrderType(),OrderOpenPrice()))
+               if(Order.CloseOrderByMagicNumber(magicnumber))
+               {
+                  OpenedOrders--;
+                  FilesOrders.InitMagicNumber();
+               }
+         } 
+      }
+   }
+   
+   //if order was opened but not exist in server
+   if (!b)
+      OpenedOrders=0;
 }
