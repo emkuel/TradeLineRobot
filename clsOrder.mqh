@@ -7,22 +7,32 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 #property strict
+
+#include <clsFile.mqh>
+#include <clsStruct.mqh>
+
+clsFile FileOrders((string)AccountNumber() + "_Orders.txt");
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 class clsOrder
   {
-private:
-                     int arrOrderList[];
+private:                     
+                     strTrend arrOrderList[];
+                     int maxOpenPosition;
+                     double moneyRisk;
+                     
                      void SetArrayOrderList(int _magicnumber);
 public:
                      double GetLotFromMoneyRisk(double _MoneyRiskPrct, double StopLoss);
                      double GetValueFromPercentage(double Value,double LotSize,int Mode);
-                     int OpenOrder(int OpenedOrder, int maxOpenPosition, int order, double lotsize, double stoploss,
-                                 double takeprofit, double MoneyRiskPrct, int _magicnumber);
+                     bool OpenOrder(int OpenedOrder, int order, double lotsize, double stoploss, double takeprofit, int _magicnumber);
                      bool CloseOrderByMagicNumber(int magicnumber);
                      bool CheckMagicNumber(int _magicNumber);
-                     clsOrder();
+                     
+                     void SetOrderArrayFromFile(strTrend &arrFile[]) {ArrayCopy(arrOrderList,arrFile);};
+                     
+                     clsOrder(double _moneyRisk,int _maxOpenPosition);
                     ~clsOrder();
   };
 double clsOrder::GetLotFromMoneyRisk(double _MoneyRiskPrct, double StopLoss) 
@@ -30,7 +40,14 @@ double clsOrder::GetLotFromMoneyRisk(double _MoneyRiskPrct, double StopLoss)
    double MoneyRiskValue = AccountBalance() * (_MoneyRiskPrct/100);
    double nTickValue=MarketInfo(Symbol(),MODE_TICKVALUE);
    double LotSize =NormalizeDouble(MoneyRiskValue/ (StopLoss * nTickValue),2);
-   if (LotSize == 0.0) LotSize = 0.01;
+   
+   double maxlot=AccountFreeMargin()/MarketInfo(Symbol(),MODE_MARGINREQUIRED);
+   
+   if (LotSize == 0.0) 
+      LotSize = 0.01;
+   else if (LotSize > maxlot)
+      LotSize = maxlot;
+      
    return (LotSize);
 }
 double clsOrder::GetValueFromPercentage(double _Value, double _lotsize, int Mode)
@@ -61,15 +78,14 @@ void clsOrder::SetArrayOrderList(int _magicnumber)
 {
    int arrsize = ArraySize(arrOrderList);
    ArrayResize(arrOrderList,arrsize+1);   
-   arrOrderList[arrsize]= _magicnumber;
+   arrOrderList[arrsize].magicnumber= _magicnumber;
 }
 
-int clsOrder::OpenOrder(int OpenedOrder, int maxOpenPosition, int order, double lotsize, double stoploss,
-               double takeprofit, double MoneyRiskPrct, int _magicnumber)
+bool clsOrder::OpenOrder(int OpenedOrder, int order, double lotsize, double stoploss,double takeprofit, int _magicnumber)
 {   
    switch((int)lotsize)
    {
-      case 0: lotsize = GetLotFromMoneyRisk(MoneyRiskPrct,stoploss);
+      case 0: lotsize = GetLotFromMoneyRisk(moneyRisk,stoploss);
    }
      
   if (OpenedOrder < maxOpenPosition)
@@ -81,7 +97,11 @@ int clsOrder::OpenOrder(int OpenedOrder, int maxOpenPosition, int order, double 
             {
                SetArrayOrderList(_magicnumber);
                Print("Short transaction opened");
-               return (OpenedOrder++);  
+               //add magicnumber to file
+               if (!FileOrders.AddMagicNumber(_magicnumber))
+                  return (false);
+         
+               return (true);  
             }     
          else
             Print("Cannot open short transaction.");
@@ -92,14 +112,18 @@ int clsOrder::OpenOrder(int OpenedOrder, int maxOpenPosition, int order, double 
          if(OrderSend(Symbol(),order,lotsize,Ask,3,Ask - (stoploss * Point) ,takeprofit,NULL,_magicnumber,0,clrGreen))
             {
                SetArrayOrderList(_magicnumber);
-               Print("Long transaction opened");
-               return (OpenedOrder++);                
+               Print("Long transaction opened");               
+               //add magicnumber to file
+               if (!FileOrders.AddMagicNumber(_magicnumber))
+                  return (false);
+                  
+               return (true);                  
             }
          else
             Print("Cannot open long transaction.");      
       }
    }
-   return (OpenedOrder);
+   return (false);
 }
 bool clsOrder::CloseOrderByMagicNumber(int magicnumber)
 {
@@ -111,7 +135,7 @@ bool clsOrder::CloseOrderByMagicNumber(int magicnumber)
                if(OrderType()==OP_BUY)
                   if(!OrderClose(OrderTicket(),OrderLots(),Bid,3))
                      return(false);
-               if(OrderType()==OP_SELL)   
+               else if(OrderType()==OP_SELL)   
                   if(!OrderClose(OrderTicket(),OrderLots(),Ask,3))
                      return(false);
                   
@@ -126,15 +150,16 @@ bool clsOrder::CheckMagicNumber(int _magicNumber)
    
    for (int i=0; i<=arrsize-1; i++)
    {
-      if (arrOrderList[i]==_magicNumber)
+      if (arrOrderList[i].magicnumber==_magicNumber)
          return(true);
    }   
    return(false);
 }
 
-clsOrder::clsOrder()
+clsOrder::clsOrder(double _moneyRisk, int _maxOpenPosition)
   {
-   
+      moneyRisk=_moneyRisk;
+      maxOpenPosition=_maxOpenPosition;
   }
 //+------------------------------------------------------------------+
 //|                                                                  |

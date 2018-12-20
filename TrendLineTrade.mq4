@@ -7,7 +7,8 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 #property strict
-
+                     
+                     
 //#import "clsTrendLine.ex4"
 //   void initTrendLineClass(int _nPeriod, int _Limit, int _NumOfTrendLine, double _PriceDeviation,
 //                           int _CandleNumber);
@@ -20,7 +21,7 @@
 //   bool CheckMagicNumber(int _magicNumber);
 //   bool CloseOrder();
 
-
+#include <clsStruct.mqh>
 #include <hCandle.mqh>
 #include <clsTrendLine.mqh>
 #include <clsOrder.mqh>
@@ -32,7 +33,7 @@ extern double MinTakeProfit=100;
 
 extern int CandleNumber =1;
 
-extern int TrendLinePeriod = 50;
+extern int TrendLinePeriod = 30;
 extern int BarsLimit=350;
 extern int TrendLinesNum=5;
 
@@ -43,11 +44,11 @@ int MaxOpenPosition = 1;
 
 clsTrendLine TrendLine(TrendLinePeriod,BarsLimit,TrendLinesNum,PriceDeviation,CandleNumber,StopLossLine,MinTakeProfit);
 clsOrder Order(MoneyRisk,MaxOpenPosition);
-clsFile FilesOrders((string)AccountNumber() + "_Orders.txt");
+clsFile FilesOrders((string)AccountNumber() + "_"+Symbol()+"_"+(string)Period()+"_Orders.txt");
 
 int OnInit()
   {
-   int arr[];
+   strTrend arr[];
    int CheckOpenPosition=0;
    //initTrendLineClass(TrendLinePeriod,BarsLimit,TrendLinesNum,PriceDeviation,CandleNumber);
    Comment("Account Balance: " + (string)NormalizeDouble(AccountBalance(),2));
@@ -60,6 +61,7 @@ int OnInit()
    if(CheckOpenPosition > OpenedOrders)
       OpenedOrders=CheckOpenPosition;
    
+   //set trendline
    TrendLine.initTrendLine(OpenedOrders);
    
    //copy magic number array

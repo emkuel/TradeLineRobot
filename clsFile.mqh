@@ -8,12 +8,14 @@
 #property version   "1.00"
 #property strict
 
+#include <clsStruct.mqh>
+
 class clsFile
   {
-private:
+private:           
                      int fileOpenStatus;
                      string FileName;
-                     int arrMagicNumberFromFile[];
+                     strTrend arrMagicNumberFromFile[];
                      int OpenOrder;                     
                      
                      bool OpenFileArray();
@@ -23,16 +25,16 @@ private:
                      bool AddMagicNumberToFile(int _magicnumber);                     
 public:              
                      
-                     bool Read1DimensionArrayFromFile(int &arr[]);
-                     bool Write1DimensionArrayToFile(int &arr[]);
+                     bool Read1DimensionArrayFromFile(strTrend &arr[]);
+                     bool Write1DimensionArrayToFile(strTrend &arr[]);
                      bool Read2DimensionArrayFromFile(double &arr[][],int Size2Dimension);
                      bool Write2DimensionArrayToFile(double &arr[][]);
                      
                      bool AddMagicNumber(int _magicnumber);
                      void InitMagicNumber();
-                     void Copy1DimensionArrayToArray(int &arrSource[], int &arrDestine[]);
+                     void Copy1DimensionArrayToArray(strTrend &arrSource[], strTrend &arrDestine[]);
                      void Copy2DimensionArrayToArray(double &arrSource[][], double &arrDestine[][]);
-                     void GetOrderArrayFromFile(int &arrFile[]){Copy1DimensionArrayToArray(arrMagicNumberFromFile,arrFile);};
+                     void GetOrderArrayFromFile(strTrend &arrFile[]){Copy1DimensionArrayToArray(arrMagicNumberFromFile,arrFile);};
                      int GetOpenOrder(){return (OpenOrder);}; 
                      clsFile(string _filename);
                     ~clsFile();                    
@@ -72,19 +74,19 @@ public:
    
    for (int i=0; i<=arrsize-1;i++)
    {
-      if(arrMagicNumberFromFile[i]==_magicnumber)
+      if(arrMagicNumberFromFile[i].magicnumber==_magicnumber)
          return(false);
    }
    
    ArrayResize(arrMagicNumberFromFile,arrsize+1);
-   arrMagicNumberFromFile[arrsize]=_magicnumber;
+   arrMagicNumberFromFile[arrsize].magicnumber=_magicnumber;
    
    return(true);
  }
  
  bool clsFile::CompareCurrentOrderToFile()
  {
-   int arr[];
+   strTrend arr[];
    int j=0;
    int arrsize;
    int arrsizeMN = ArraySize(arrMagicNumberFromFile);
@@ -95,11 +97,11 @@ public:
       for (int i=OrdersTotal()-1; i>=0; i--)
       {
          if(OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
-            if(arrMagicNumberFromFile[h] == OrderMagicNumber())
+            if(arrMagicNumberFromFile[h].magicnumber == OrderMagicNumber())
             {
                arrsize = ArraySize(arr);
                ArrayResize(arr,arrsize+1);
-               arr[j]=arrMagicNumberFromFile[h];
+               arr[j].magicnumber=arrMagicNumberFromFile[h].magicnumber;
                j++;
                break;
             }
@@ -135,7 +137,7 @@ public:
       
    return (true);
  }
- void clsFile::Copy1DimensionArrayToArray(int &arrSource[], int &arrDestine[])
+ void clsFile::Copy1DimensionArrayToArray(strTrend &arrSource[], strTrend &arrDestine[])
  {
    ArrayFree(arrDestine);
    ArrayCopy(arrDestine,arrSource);
@@ -146,13 +148,13 @@ public:
    ArrayCopy(arrDestine,arrSource);
  } 
  
- bool clsFile::Read1DimensionArrayFromFile(int &arr[])
+ bool clsFile::Read1DimensionArrayFromFile(strTrend &arr[])
  {
    bool b=false;
    if(OpenFileArray())
    {
       FileReadArray(fileOpenStatus,arr);   
-       b=true;
+      b=true;
    }      
    CloseFileArray();  
    
@@ -177,7 +179,7 @@ public:
    return (b);
 }
 
-bool clsFile::Write1DimensionArrayToFile(int &arr[])
+bool clsFile::Write1DimensionArrayToFile(strTrend &arr[])
 {
    bool b=false;
    FileDelete(FileName);
