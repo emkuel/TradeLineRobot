@@ -14,6 +14,7 @@ class clsFile
   {
 private:           
                      int fileOpenStatus;
+                     int error;
                      string FileName;
                      strTrend arrMagicNumberFromFile[];
                      int OpenOrder;                     
@@ -42,7 +43,6 @@ public:
   
  void clsFile::InitMagicNumber()
  {
- 
    if(Read1DimensionArrayFromFile(arrMagicNumberFromFile))
       if(!CompareCurrentOrderToFile())
          FileDelete(FileName);
@@ -130,8 +130,8 @@ public:
  }
  bool clsFile::OpenFileArray()
  { 
-   fileOpenStatus = FileOpen(FileName,FILE_BIN|FILE_READ|FILE_WRITE);
-   
+   fileOpenStatus = FileOpen(FileName,FILE_BIN|FILE_READ|FILE_WRITE)
+   ;
    if (fileOpenStatus < 0)
      return(false);
       
@@ -149,14 +149,18 @@ public:
  } 
  
  bool clsFile::Read1DimensionArrayFromFile(strTrend &arr[])
- {
+ {    
    bool b=false;
    if(OpenFileArray())
    {
-      FileReadArray(fileOpenStatus,arr);   
-      b=true;
+      FileReadArray(fileOpenStatus,arr); 
+      error=GetLastError();
+      if (error == 4029)
+         b=false;
+      else      
+         b=true;
    }      
-   CloseFileArray();  
+   CloseFileArray();
    
    return (b);
  }

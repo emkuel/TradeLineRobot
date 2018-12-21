@@ -1,4 +1,4 @@
-//+------------------------------------------------------------------+
+   //+------------------------------------------------------------------+
 //|                                               TrendLineTrade.mq4 |
 //|                                                      FutureRobot |
 //|                                             https://www.mql5.com |
@@ -37,7 +37,7 @@ extern int TrendLinePeriod = 30;
 extern int BarsLimit=350;
 extern int TrendLinesNum=5;
 
-extern double PriceDeviation=50;
+extern double PriceDeviation=80;
 
 int OpenedOrders=0;
 int MaxOpenPosition = 1;
@@ -52,9 +52,9 @@ int OnInit()
    int CheckOpenPosition=0;
    //initTrendLineClass(TrendLinePeriod,BarsLimit,TrendLinesNum,PriceDeviation,CandleNumber);
    Comment("Account Balance: " + (string)NormalizeDouble(AccountBalance(),2));
+   
    initTimeCandle(CandleNumber);
    FilesOrders.InitMagicNumber();
-   
    //get open position
    CheckOpenPosition=FilesOrders.GetOpenOrder();
    
@@ -63,7 +63,7 @@ int OnInit()
    
    //set trendline
    TrendLine.initTrendLine(OpenedOrders);
-   
+   ResetLastError();
    //copy magic number array
    FilesOrders.GetOrderArrayFromFile(arr);
    Order.SetOrderArrayFromFile(arr);
@@ -82,14 +82,18 @@ void OnDeinit(const int reason)
 //| Expert tick function                                             |
 //+------------------------------------------------------------------+
 void OnTick()
-{     
-   
+{    
    if(OpenedOrders==0 && CheckCurrentCandle(CandleNumber))
-   {
+   {     
+      
       TrendLine.initTrendLine(OpenedOrders);
       if(TrendLine.GetValueByShiftInFuncLine()) 
-        if(Order.OpenOrder(OpenedOrders,TrendLine.GetOrder(),0,TrendLine.GetStopLoss(),0,TrendLine.GetMagicNumber()))
-            OpenedOrders++;
+        {
+         if(Order.OpenOrder(OpenedOrders,TrendLine.GetOrder(),0,TrendLine.GetStopLoss(),0,TrendLine.GetMagicNumber()))
+            {
+               OpenedOrders++;
+            }
+        }
   }   
    else if (OpenedOrders>0)
       CheckCurrentOrders();

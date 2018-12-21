@@ -11,7 +11,7 @@
 #include <clsFile.mqh>
 #include <clsStruct.mqh>
 
-clsFile FileOrders((string)AccountNumber() + "_Orders.txt");
+clsFile FileOrders((string)AccountNumber() + "_"+Symbol()+"_"+(string)Period()+"_Orders.txt");
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+

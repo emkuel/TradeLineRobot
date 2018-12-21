@@ -8,6 +8,7 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 #property strict
+
 struct strTrend{
    double   price;
    double   a;

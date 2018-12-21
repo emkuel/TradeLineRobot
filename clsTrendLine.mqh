@@ -120,9 +120,9 @@ void clsTrendLine::SetNearestTrendLineArray()
    
    for(int i=0;i<=(NumOfTrendLine*2)-1;i++)
    {            
-      BarStart = iBarShift(_Symbol,0,arrFuncLine[i].xTimeDef);
+      BarStart = iBarShift(Symbol(),0,arrFuncLine[i].xTimeDef);
       TrendLinePrice=GetY(arrFuncLine[i].a,BarStart-CandleNumber,arrFuncLine[i].b);
-      
+
       if (TrendLinePrice > CloseBar)
       {
          ArrayResize(arrTrendLineAbove,j+1);
@@ -134,7 +134,7 @@ void clsTrendLine::SetNearestTrendLineArray()
          j++;         
       }      
       else if (TrendLinePrice < CloseBar)
-      {         
+      {      
          ArrayResize(arrTrendLineBelow,k+1);
          arrTrendLineBelow[k].price = TrendLinePrice;                 //price
          arrTrendLineBelow[k].a = arrFuncLine[i].a;                   //a
@@ -144,7 +144,7 @@ void clsTrendLine::SetNearestTrendLineArray()
          k++;
       }  
    }
-   
+    
    //Copy to file
    FileTLBelow.Write1DimensionArrayToFile(arrTrendLineBelow);
    FileTLAbove.Write1DimensionArrayToFile(arrTrendLineAbove);
@@ -163,7 +163,7 @@ bool clsTrendLine::GetValueByShiftInFuncLine()
     CloseBar = Close[CandleNumber];
     HighBar = High[CandleNumber];
     LowBar = Low[CandleNumber];
-    
+        
     if ((TrendLinePriceBelow >= LowBar && (TrendLinePriceBelow <= CloseBar || TrendLinePriceBelow <= OpenBar))
          || (TrendLinePriceBelow + (PriceDeviation * Point) >= LowBar 
             && (TrendLinePriceBelow + (PriceDeviation * Point) <= CloseBar || TrendLinePriceBelow + (PriceDeviation * Point) <= OpenBar))
@@ -200,7 +200,7 @@ bool clsTrendLine::GetValueByShiftInFuncLine()
       StopLoss= MathAbs((((TrendLinePriceAbove+(StopLossLine*Point))-Bid)/Point));
       b=true; 
     }
-  
+    
   //Copy to file
    FileTLBelow.Write1DimensionArrayToFile(arrTrendLineBelow);
    FileTLAbove.Write1DimensionArrayToFile(arrTrendLineAbove);
@@ -254,11 +254,11 @@ void clsTrendLine::SetArrayFunctionLine()
       arrFuncLine[j].xTimeDef=Time[MathAbs((int)arrLowS[i].barshift)];
       arrFuncLine[j].a=GetA(0,arrLowS[i].price,arrLowS[i+1].barshift-arrLowS[i].barshift,arrLowS[i+1].price);
       arrFuncLine[j].b=GetB(arrFuncLine[j].a,0,arrLowS[i].price);
- 
+   
       //High
-      arrFuncLine[j].xTimeDef=Time[MathAbs((int)arrHighR[i].barshift)];
-      arrFuncLine[j].a=GetA(0,arrHighR[i].price,arrHighR[i+1].barshift-arrHighR[i].barshift,arrHighR[i+1].price);
-      arrFuncLine[j].b=GetB(arrFuncLine[j+1].a,0,arrHighR[i].price);
+      arrFuncLine[j+1].xTimeDef=Time[MathAbs((int)arrHighR[i].barshift)];
+      arrFuncLine[j+1].a=GetA(0,arrHighR[i].price,arrHighR[i+1].barshift-arrHighR[i].barshift,arrHighR[i+1].price);
+      arrFuncLine[j+1].b=GetB(arrFuncLine[j+1].a,0,arrHighR[i].price);
       
       j+=2;            
    }
@@ -304,7 +304,7 @@ void clsTrendLine::SetNearestTL()
 {
     strTrend arrAbove[];
     strTrend arrBelow[];
-   
+     
     if(OpenedOrders==0)
       SetNearestTrendLineArray();
     else
@@ -332,7 +332,7 @@ void clsTrendLine::SetNearestTL()
 }
 
 void clsTrendLine::initTrendLine(int _OpenedOrders)
-{
+{  
    OpenedOrders=_OpenedOrders;
    
    if(OpenedOrders==0)
@@ -370,11 +370,7 @@ clsTrendLine::clsTrendLine(int _nPeriod, int _Limit, int _NumOfTrendLine, double
         nPeriod=nPeriod*AutoFactor;
         Limit=Limit*AutoFactor;
     }
-    else
-      Limit = (int)ChartGetInteger(0,CHART_VISIBLE_BARS);
-   
-   //initTrendLine(0);
-   
+    
    Print("All set");
   }
 clsTrendLine::~clsTrendLine()
